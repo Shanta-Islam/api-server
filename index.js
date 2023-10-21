@@ -93,7 +93,7 @@ async function run() {
     app.post('/storeProduct', async (req, res) => {
       const storeProduct = req.body;
       const result = await cartCollection.insertOne(storeProduct);
-      res.send(result);
+      res.send(result); 
     });
     app.put('/product/:id', async (req, res) => {
       const id = req.params.id;
