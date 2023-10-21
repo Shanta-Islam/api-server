@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-   
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
@@ -35,10 +35,10 @@ async function run() {
 
 
     app.get('/brands', async (req, res) => {
-        const query = {};
-        const cursor = brandCollection.find(query);
-        const brands = await cursor.toArray();
-        res.send(brands);
+      const query = {};
+      const cursor = brandCollection.find(query);
+      const brands = await cursor.toArray();
+      res.send(brands);
     });
 
     // app.get('/brands/:id', async (req, res) => {
@@ -48,16 +48,10 @@ async function run() {
     //     res.send(brands);
     // })
 
-    app.post('/products', async(req, res)=>{
-        const newProduct = req.body;
-        const result = await productsCollection.insertOne(newProduct);
-        res.send(result);
-    })
-
     app.get('/product/:brand_name', async (req, res) => {
 
       const brand_name = req.params.brand_name;
-      const query = {brandName: brand_name };
+      const query = { brandName: brand_name };
       const result = await productsCollection.find(query);
       const products = await result.toArray();
       // console.log(products)
@@ -67,13 +61,30 @@ async function run() {
 
     app.get('/product-details/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) }; 
+      const query = { _id: new ObjectId(id) };
       const product = await productsCollection.findOne(query);
       res.send(product);
 
     })
 
-    app.post('/user', async(req,res)=>{
+    app.get('/storeProduct/:email', async (req, res) => {
+
+      const userEmail = req.params.email;
+      const query = { email: userEmail };
+      const result = await cartCollection.find(query);
+      const storeProducts = await result.toArray();
+      // console.log(storeProducts)
+      res.send(storeProducts);
+
+    })
+
+    app.post('/products', async (req, res) => {
+      const newProduct = req.body;
+      const result = await productsCollection.insertOne(newProduct);
+      res.send(result);
+    })
+
+    app.post('/user', async (req, res) => {
       const user = req.body;
       const result = await userCollection.insertOne(user);
       res.send(result);
@@ -82,46 +93,35 @@ async function run() {
     app.post('/storeProduct', async (req, res) => {
       const storeProduct = req.body;
       const result = await cartCollection.insertOne(storeProduct);
-      console.log(result);
+      res.send(result);
     });
-    app.get('/storeProduct/:email', async (req, res) => {
-
-      const userEmail = req.params.email;
-      const query = {email: userEmail };
-      const result = await cartCollection.find(query);
-      const storeProducts = await result.toArray();
-      // console.log(storeProducts)
-      res.send(storeProducts);
-
-    })
-
     app.put('/product/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
-      const options = {upsert: true};
+      const options = { upsert: true };
       const updatedProduct = req.body;
       const product = {
         $set: {
-          photo: updatedProduct.photo, 
-          name: updatedProduct.name, 
-          brandName: updatedProduct.brandName, 
-          type: updatedProduct.type, 
-          price: updatedProduct.price, 
+          photo: updatedProduct.photo,
+          name: updatedProduct.name,
+          brandName: updatedProduct.brandName,
+          type: updatedProduct.type,
+          price: updatedProduct.price,
           rating: updatedProduct.rating
         }
       }
       const result = await productsCollection.updateOne(filter, product, options);
       res.send(result);
-  })
+    })
     app.delete('/product/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await cartCollection.deleteOne(query);
       res.send(result);
-  })
-    
+    })
 
-    
+
+
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -134,9 +134,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('eShopHub making server is running')
+  res.send('eShopHub making server is running')
 })
 
 app.listen(port, () => {
-    console.log(`eShopHub Server is running on port: ${port}`)
+  console.log(`eShopHub Server is running on port: ${port}`)
 })
