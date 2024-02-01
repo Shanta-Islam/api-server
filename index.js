@@ -27,99 +27,133 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-    const brandCollection = client.db('eShopHub').collection('brands');
-    const productsCollection = client.db('eShopHub').collection('products');
-    const userCollection = client.db('eShopHub').collection('user');
-    const cartCollection = client.db('eShopHub').collection('cart');
+    const blogsCollection = client.db('blogDB').collection('blogs');
+    const favoriteCollection = client.db('blogDB').collection('favorites');
+    const commentsCollection = client.db('blogDB').collection('comments');
 
 
 
-    app.get('/brands', async (req, res) => {
+    app.get('/blogs', async (req, res) => {
       const query = {};
-      const cursor = brandCollection.find(query);
-      const brands = await cursor.toArray();
-      res.send(brands);
+      const result = await blogsCollection.find(query).toArray();
+      res.send(result);
     });
 
-    // app.get('/brands/:id', async (req, res) => {
-    //     const id = req.params.id;
-    //     const query = { _id: new ObjectId(id) };
-    //     const brands = await brandCollection.findOne(query);
-    //     res.send(brands);
-    // })
-
-    app.get('/product/:brand_name', async (req, res) => {
-
-      const brand_name = req.params.brand_name;
-      const query = { brandName: brand_name };
-      const result = await productsCollection.find(query);
-      const products = await result.toArray();
-      // console.log(products)
-      res.send(products);
-
-    })
-
-    app.get('/product-details/:id', async (req, res) => {
+    app.get('/blog-details/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const product = await productsCollection.findOne(query);
-      res.send(product);
-
+      const blog = await blogsCollection.findOne(query);
+      res.send(blog);
+    })
+    app.get('/myblogs/:userId', async (req, res) => {
+      const userId = req.params.userId;
+      const query = { userId: userId };
+      const blog = await blogsCollection.find(query).toArray();
+      res.send(blog);
     })
 
-    app.get('/storeProduct/:email', async (req, res) => {
-
+    app.get('/storedBlogs/:email', async (req, res) => {
       const userEmail = req.params.email;
       const query = { email: userEmail };
-      const result = await cartCollection.find(query);
-      const storeProducts = await result.toArray();
-      // console.log(storeProducts)
-      res.send(storeProducts);
-
+      const result = await favoriteCollection.find(query).toArray();
+      res.send(result);
     })
-
-    app.post('/products', async (req, res) => {
-      const newProduct = req.body;
-      const result = await productsCollection.insertOne(newProduct);
+    app.post('/blog', async (req, res) => {
+      const newBlog = req.body;
+      const result = await blogsCollection.insertOne(newBlog);
       res.send(result);
     })
 
-    app.post('/user', async (req, res) => {
-      const user = req.body;
-      const result = await userCollection.insertOne(user);
+    app.post('/storedBlog', async (req, res) => {
+      const storeBlog = req.body;
+      const result = await favoriteCollection.insertOne(storeBlog);
       res.send(result);
-    })
-
-    app.post('/storeProduct', async (req, res) => {    
-      const storeProduct = req.body;
-      const result = await cartCollection.insertOne(storeProduct);
-      res.send(result); 
     });
-    app.put('/product/:id', async (req, res) => {
+    app.put('/blog/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const options = { upsert: true };
-      const updatedProduct = req.body;
-      const product = {
+      const updatedBlog = req.body;
+      const blog = {
         $set: {
-          photo: updatedProduct.photo,
-          name: updatedProduct.name,
-          brandName: updatedProduct.brandName,
-          type: updatedProduct.type,
-          price: updatedProduct.price,
-          rating: updatedProduct.rating
+          photo: updatedBlog.photo,
+          title: updatedBlog.title,
+          body: updatedBlog.body,
         }
       }
-      const result = await productsCollection.updateOne(filter, product, options);
+      const result = await blogsCollection.updateOne(filter, blog, options);
       res.send(result);
     })
-    app.delete('/product/:id', async (req, res) => {
+    app.delete('/blog/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
-      const result = await cartCollection.deleteOne(query);
+      const result = await blogsCollection.deleteOne(query);
+      res.send(result);
+    })
+    app.delete('/deleteBlog/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await favoriteCollection.deleteOne(query);
       res.send(result);
     })
 
+    app.get('/tasks-comments', async (req, res) => {
+      let query = {};
+      if (req.query.taskId) {
+        query = {
+          taskId: req.query.taskId
+        }
+      }
+      const cursor = commentsCollection.find(query).sort({ comment_date: -1 });
+      const reviews = await cursor.toArray();
+      res.send(reviews);
+
+    })
+
+    app.get('/activeuser-comments/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email }
+      const user = await commentsCollection.find(query).toArray();
+      res.send(user);
+      console.log(user)
+
+
+
+    })
+
+    app.get('/user-reviews/:userID', async (req, res) => {
+      const userID = req.params.userID;
+      let query = { 'reviewer_info.userID': userID };
+      const cursor = commentsCollection.find(query).sort({ review_date: -1 });
+      const reviews = await cursor.toArray();
+      res.send(reviews);
+
+    })
+
+    app.patch('/comment/:id', async (req, res) => {
+      const id = req.params.id;
+      const updateReviewData = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updatedReview = {
+        $set: updateReviewData
+
+      }
+      const result = await commentsCollection.updateOne(query, updatedReview);
+      res.send(result);
+    })
+
+    app.delete('/comment/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await commentsCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    app.post('/comment', async (req, res) => {
+      const review = req.body;
+      const result = await commentsCollection.insertOne(review);
+      res.send(result);
+    })
 
 
     // Send a ping to confirm a successful connection
@@ -134,9 +168,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-  res.send('eShopHub making server is running')
+  res.send('blog making server is running')
 })
 
 app.listen(port, () => {
-  console.log(`eShopHub Server is running on port: ${port}`)
+  console.log(`blog Server is running on port: ${port}`)
 })
